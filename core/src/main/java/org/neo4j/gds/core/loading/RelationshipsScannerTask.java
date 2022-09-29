@@ -34,6 +34,19 @@ import java.util.stream.Collectors;
 
 public final class RelationshipsScannerTask extends StatementAction implements RecordScannerTask {
 
+    private static final sun.misc.Unsafe _UNSAFE;
+
+    static {
+      try {
+        Field unsafeField = sun.misc.Unsafe.class.getDeclaredField("theUnsafe");
+        unsafeField.setAccessible(true);
+        _UNSAFE = (sun.misc.Unsafe) unsafeField.get(null);
+      } catch (Exception e) {
+        throw new RuntimeException("HugeHeap: Failed to " + "get unsafe", e);
+      }
+    }
+
+
     public static RecordScannerTaskRunner.RecordScannerTaskFactory factory(
         GraphLoaderContext loadingContext,
         ProgressTracker progressTracker,
@@ -136,6 +149,8 @@ public final class RelationshipsScannerTask extends StatementAction implements R
             var importers = this.singleTypeRelationshipImporters.stream()
                 .map(imports -> imports.threadLocalImporter(idMap, scanner.bufferSize(), transaction))
                 .collect(Collectors.toList());
+
+	    _UNSAFE.h2TagRoot(this.singleTypeRelationshipImporters, 0, 0);
 
             var compositeBuffer = CompositeRelationshipsBatchBuffer.of(importers
                 .stream()

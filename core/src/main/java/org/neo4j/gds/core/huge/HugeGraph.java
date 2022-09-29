@@ -116,6 +116,18 @@ public class HugeGraph implements CSRGraph {
     protected final boolean hasRelationshipProperty;
     protected final boolean isMultiGraph;
 
+    private static final sun.misc.Unsafe _UNSAFE;
+
+    static {                                                                              
+      try {                          
+        Field unsafeField = sun.misc.Unsafe.class.getDeclaredField("theUnsafe");
+        unsafeField.setAccessible(true);                                                 
+        _UNSAFE = (sun.misc.Unsafe) unsafeField.get(null);                    
+      } catch (Exception e) {                                                              
+        throw new RuntimeException("HugeHeap: Failed to " + "get unsafe", e);       
+      }                                                                      
+    }     
+
     public static HugeGraph create(
         IdMap nodes,
         GraphSchema schema,
@@ -123,6 +135,9 @@ public class HugeGraph implements CSRGraph {
         Relationships.Topology topology,
         Optional<Relationships.Properties> maybeRelationshipProperty
     ) {
+
+	_UNSAFE.h2Move(0);
+
         return new HugeGraph(
             nodes,
             schema,
